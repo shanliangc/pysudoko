@@ -2,12 +2,15 @@ import sudoko.SudoBlock
 import random
 class SudoTable:
     #data:
-    res = 81
-    table = []
-    row_possible_element = []
-    col_possible_element = []
-    sudo_block = []
-    order = [2,8,7,4,7,3]
+
+
+    order = [1,2,5,3,6,7]
+    number = [1,2,3,4,5,6,7,8,9]
+    #order_number存储的是每次搜索的路径，如果在此模块里面搜索的值的对应链表中不存在可能的坐标
+    #则返回上一个搜索的值，直到把这条路径走完
+    #每一次更新的时候，都需要对以下内容进行更改：
+    #
+    order_number = {'order':[],'number':[]}
 
     #function:
     #简要讲解一下生成算法：
@@ -16,7 +19,18 @@ class SudoTable:
     #填数字的格的序号是：[2,8,7,4,6,3]，其中这串数字已经被记录在order中，直接使用就可以
     #初始化函数
     def __init__(self):
+        #公有变量初始化
+        for n in self.number:
+            for o in self.order:
+                self.order_number['order'].append(o)
+                self.order_number['number'].append(n)
+        #私有变量初始化
+        self.now = 0
         self.res = 81
+        self.table = []
+        self.row_possible_element = []
+        self.col_possible_element = []
+        self.sudo_block = []
         for i in range(0,9):
             #初始化表格,全部初始化成0
             self.table.append([0,0,0,0,0,0,0,0,0])
@@ -29,9 +43,9 @@ class SudoTable:
                 self.col_possible_element[i].append(j)
             #初始化数独块
             tmp_block = sudoko.SudoBlock.SudoBlock(i)
-            print(tmp_block)
             self.sudo_block.append(tmp_block)
-        print("block len = ",len(self.sudo_block))
+
+
 
             #测试构建的结果，发现存在问题
             # tmp_block.print_block()
@@ -142,6 +156,15 @@ class SudoTable:
         for num in self.order:
             self.sudo_block[num].print_block()
 
+    def clean_private_variable(self):
+        pass
+
+    def search_path(self):
+        if self.now == 54:
+            #如果当前已经把54个都走遍了，则返回结束
+            return "end"
+        else:
+            [xgrid,ygrid,num] = [0,0,0]
 
 
 
