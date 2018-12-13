@@ -1,13 +1,20 @@
 import sudoko.test1
 class student_table:
+    name = 0
     student_information = []
-    def __init__(self):
-        for i in range(0,20):
-            tmp_information = sudoko.test1.information("chen",i)
-            self.student_information.append(tmp_information)
+    def __init__(self,i):
+        self.mytable = []
+        for i in range(20):
+            self.student_information.append([])
+            self.mytable.append([])
+        self.name = str(i)
     def print_table(self):
-        for ele in self.student_information:
-            ele.print_information()
+        print("name "+ str(self.name) + " " + str(len(self.student_information)))
+        print("name "+ str(self.name) + " " + str(len(self.mytable)))
 
-s = student_table()
-s.print_table()
+
+for i in range(20):
+    #难道没创建新的东西吗？
+    a = student_table(i)
+    print(a)
+    a.print_table()
