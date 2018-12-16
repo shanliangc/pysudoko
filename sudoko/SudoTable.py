@@ -1,174 +1,259 @@
 import sudoko.SudoBlock
 import random
+import codecs
+
+
+def ele_compare(ele):
+    return ele[1]
+
 class SudoTable:
-    #data:
+    # data:
+    ele = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    block_num = [1, 2, 5, 3, 6, 7]
+    path = []
+    ans = []
+    left_puzzle = 0
 
-
-    order = [1,2,5,3,6,7]
-    number = [1,2,3,4,5,6,7,8,9]
-    #order_number存储的是每次搜索的路径，如果在此模块里面搜索的值的对应链表中不存在可能的坐标
-    #则返回上一个搜索的值，直到把这条路径走完
-    #每一次更新的时候，都需要对以下内容进行更改：
-    #
-    order_number = {'order':[],'number':[]}
-
-    #function:
-    #简要讲解一下生成算法：
-    #生成算法先随机生成0、4、8block的值，因为0、4、8模块的值是互不冲突的，所以可以直接填上
-    #再使用回溯法，分别填1，2，3，4，5，6，7，8，9的值，这里的填法是先将某一个数字填满9个不同的block
-    #填数字的格的序号是：[2,8,7,4,6,3]，其中这串数字已经被记录在order中，直接使用就可以
-    #初始化函数
-    def __init__(self):
-        #公有变量初始化
-        for n in self.number:
-            for o in self.order:
-                self.order_number['order'].append(o)
-                self.order_number['number'].append(n)
-        #私有变量初始化
-        self.now = 0
+    def __init__(self, left_puzzle):
+        # res是一个终局还代填的数字
         self.res = 81
+        # path出发的位置
+        self.start = 0
+        # 坐标对应的数值是否存在可能
+        self.coordinate_ele_jud = {}
+        # 终局结果
         self.table = []
-        self.row_possible_element = []
-        self.col_possible_element = []
-        self.sudo_block = []
-        for i in range(0,9):
-            #初始化表格,全部初始化成0
-            self.table.append([0,0,0,0,0,0,0,0,0])
-            #初始化每一行。
-            self.row_possible_element.append([])
-            self.col_possible_element.append([])
-            #初始化每一行、每一列的可能值
-            for j in range(1,10):
-                self.row_possible_element[i].append(j)
-                self.col_possible_element[i].append(j)
-            #初始化数独块
-            tmp_block = sudoko.SudoBlock.SudoBlock(i)
-            self.sudo_block.append(tmp_block)
+        # 初始化最终答案
+        for i in range(0, 9):
+            self.table.append([0, 0, 0, 0, 0, 0, 0, 0, 0])
+        # 初始化坐标对应的可能的元素值
+        for row in range(0, 9):
+            for col in range(0, 9):
+                self.coordinate_ele_jud[(row, col)] = {}
+                for tmp_ele in self.ele:
+                    self.coordinate_ele_jud[(row, col)][tmp_ele] = True
+        # 初始化路径
+        for tmp_ele in self.ele:
+            for tmp_block_num in self.block_num:
+                self.path.append((tmp_ele, tmp_block_num))
+        # 初始化还剩下的终局数量
+        self.left_puzzle = left_puzzle
 
-
-
-            #测试构建的结果，发现存在问题
-            # tmp_block.print_block()
-
-    #生成数独库文件，同时返回table的值，以便将table写入最终的文件中
-    def generate_sudoku(self):
-        #先填满0_4_8模块的内容
-        self.initialize_0_4_8_block()
-        #再一次不足2、8、7、4、1、3模块中的可能值
-        self.upgrade_2_8_7_4_1_3()
-
-        #最后返回table值。将table保存在一个更大的链表中，可以逐一将table的值写入结果方程中
-        return self.table
-
-    #打印函数
-    def print_SudoTable(self):
-        print("res = ",self.res)
-        for raw in self.table:
-            for element in raw:
-                print(element,end=' ')
-            print()
-        print()
-
-    #对一个block里面的数字进行随机化处理
-    def initialize_element_group_in_1_9(self,num):
-        rs = random.sample(range(1,10),9)
-        #应作业的要求，我的学号后两位是1，0，所以左上角的数字应该为(1+0)%9+1 = 2
-        if num == 0:
-            tmp = 0
-            for i in range(0,9):
-                if rs[i] == 2:
-                    tmp = i
-                    break
-            rs[tmp] = rs[0]
-            rs[0] = 2
-        return rs
-
-    #对一次性填满的词块进行处理
-    def process_element_group_in_0_4_8(self,rs,num):
-        a = int(num/3)
-        b = int(num%3)
-        tmp = 0
-        # print("rs",num," = ",rs,"process_element_group_in_0_4_8")
-        # print((a,b))
-        for i in range(0,3):
-            row = a * 3 + i
-            for j in range(0,3):
-                col = b*3 + j
-                #对整个词块进行处理
-                self.table[row][col] = rs[tmp]
-
-                #删除行中可能的值
-                self.row_possible_element[row].remove(rs[tmp])
-                #删除列中可能的值
-                self.col_possible_element[col].remove(rs[tmp])
-                tmp += 1
-                # 剩余的填词数--
-                self.res -= 1
-        # self.print_SudoTable()
-
-    #查看还剩下的行和列的值：
-    def print_possible_element(self):
-        print("row_possible_element:")
-        for ele in self.row_possible_element:
-            print(ele)
-        print("col_possible_element:")
-        for ele in self.col_possible_element:
-            print(ele)
-
-    #初始化0_4_8中的数字
-    def initialize_0_4_8_block(self):
-        #生成第0个block里面的数字：
-        rs1 = self.initialize_element_group_in_1_9(0)
-        # print("rs0 = ",rs1)
-        self.process_element_group_in_0_4_8(rs1,0)
-        # print("**************")
-        #生成第4个block里面的数字：
-        rs2 = self.initialize_element_group_in_1_9(4)
-        # print("rs4 = ",rs2)
-        self.process_element_group_in_0_4_8(rs2,4)
-        # print("**************")
-        #生成第8个block里面的数字：
-        rs3 = self.initialize_element_group_in_1_9(8)
-        # print("rs8 = ",rs3)
-        self.process_element_group_in_0_4_8(rs3,8)
-
-        del rs1,rs2,rs3
-        # print("**************")
-    
-    #对block中的情况进行更新，此函数发生在初始完0、4、8模块以后
-    def upgrade_2_8_7_4_1_3(self):
-        for num in self.order:
-            a = int(num/3)
-            b = int(num%3)
-            for i in range(0,3):
-                row = a * 3 + i
-                for j in range(0,3):
-                    col = b*3 + j
-                    ls = [tmp for tmp in self.row_possible_element[row] if tmp in self.col_possible_element]
-                    print((row,col))
-                    print(ls)
-                    for ele in ls:
-                        #更新可能的值
-                        self.sudo_block[num].upgrade_possible_element(ele,row,col)
-
-    #检查sudoko_block的情况
-    def check_sudo_block(self):
-        for num in self.order:
-            self.sudo_block[num].print_block()
-
-    def clean_private_variable(self):
+    def print_table(self):
         pass
 
-    def search_path(self):
-        if self.now == 54:
-            #如果当前已经把54个都走遍了，则返回结束
-            return "end"
+    # 自动生成一个终局
+    def generate_sudoko_puzzle(self):
+        self.generate_0_4_8_block(0)
+        self.generate_0_4_8_block(4)
+        self.generate_0_4_8_block(8)
+        self.search_a_puzzle(0)
+        # for i in range(0, 9):
+        #     print(self.table[i])
+        #     if i % 3 == 2:
+        #         print()
+        # print()
+
+    # 自动生成0、4、8方块的算法
+    def generate_0_4_8_block(self, block_num):
+        random_ele_sequence = random.sample(range(1, 10), 9)
+        if block_num == 0:
+            subs = 0
+            for i in range(0, 9):
+                if random_ele_sequence[i] == 2:
+                    subs = i
+                    break
+            random_ele_sequence[subs] = random_ele_sequence[0]
+            random_ele_sequence[0] = 2
+        subs = 0
+        a = int(block_num / 3)
+        b = int(block_num % 3)
+        for i in range(0, 3):
+            row = a * 3 + i
+            for j in range(0, 3):
+                col = b * 3 + j
+                tmp_ele = random_ele_sequence[subs]
+                self.table[row][col] = random_ele_sequence[subs]
+                # 更改其他行列剩余的可能的值
+                # python的不灵活性体现在一下的句子中，如果这里不用tmp_ele而用random_ele_sequence[subs]
+                # 是会报错的
+                # 可能传入一个list特定下标的值对我们来说事已知的，但是python在传入的时候，必须传入一次访问就存在的切实的数
+                self.coordinate_ele_jud[(row, col)][tmp_ele] = False
+                for tmp_row in range(0, 9):
+                    self.coordinate_ele_jud[(tmp_row, col)][tmp_ele] = False
+                for tmp_col in range(0, 9):
+                    self.coordinate_ele_jud[(row, tmp_col)][tmp_ele] = False
+                # 很明显对于0、4、8block而言，这些block里面
+                for tmp_ele in self.ele:
+                    self.coordinate_ele_jud[(row, col)][tmp_ele] = False
+
+                # 剩余代填的空格数量-1
+                self.res -= 1
+                subs += 1
+
+    def search_possible_coordinate_for_ele(self, ele, block_num):
+        a = int(block_num / 3)
+        b = int(block_num % 3)
+        possible_coordinate = []
+        for i in range(0, 3):
+            row = a * 3 + i
+            for j in range(0, 3):
+                col = b * 3 + j
+                if self.coordinate_ele_jud[(row, col)][ele]:
+                    possible_coordinate.append((row, col))
+        return possible_coordinate
+
+    # 寻找一个终局
+    # 把上一个传进来
+    #
+    def search_a_puzzle(self, start):
+        if start >= len(self.path):
+            # print("end")
+            # print("end")
+            self.left_puzzle -= 1
+            self.ans.append(self.table)
+            # for row in self.table:
+            #     print(row)
+            # print()
+
+            # print("end2222")
+            return True
+        # 当前要填的是哪一个元素，哪一个格子
+        (ele, block_num) = self.path[start]
+        # print("start = ", start, " ", (ele, block_num))
+        # 寻找当前block，可以填上ele的坐标有哪些
+        possible_coordinate = self.search_possible_coordinate_for_ele(ele, block_num)
+        # print(possible_coordinate)
+        is_find = False
+        if len(possible_coordinate) == 0:
+            # print('sssssssssssssssssssssss')
+            return False
+        for (row, col) in possible_coordinate:
+            # 对于每一个当前block可以填下数字ele的坐标而言
+            # 记录因在这个coordinate填写当前ele而改变的状态，保存下来
+            self.table[row][col] = ele
+            changed_coordinate = []
+            # 更改自身的值
+            changed_this_coordinate_ele = []
+            for tmp_ele in self.ele:
+                if self.coordinate_ele_jud[(row, col)][tmp_ele]:
+                    self.coordinate_ele_jud[(row, col)][tmp_ele] = False
+                    changed_this_coordinate_ele.append(tmp_ele)
+            # 更改同一个block的
+            a = int(block_num / 3)
+            b = int(block_num % 3)
+            for i in range(0, 3):
+                tmp_row = a * 3 + i
+                for j in range(0, 3):
+                    tmp_col = b * 3 + j
+                    if self.coordinate_ele_jud[(tmp_row, tmp_col)][ele]:
+                        changed_coordinate.append((tmp_row, tmp_col))
+                        self.coordinate_ele_jud[(tmp_row, tmp_col)][ele] = False
+            # 更改同行的
+            for tmp_row in range(0, 9):
+                if self.coordinate_ele_jud[(tmp_row, col)][ele]:
+                    changed_coordinate.append((tmp_row, col))
+                    self.coordinate_ele_jud[(tmp_row, col)][ele] = False
+            # 更改同列的
+            for tmp_col in range(0, 9):
+                if self.coordinate_ele_jud[(row, tmp_col)][ele]:
+                    changed_coordinate.append((row, tmp_col))
+                    self.coordinate_ele_jud[(row, tmp_col)][ele] = False
+            # 根据路径寻找下一个
+            # 如果下一个返回的是False，则代表不能找到
+            # 如果下一个返回的值是True，代表已经找到了结果
+            # print("coordinate = ", (row,col),"changed_coordinate = ", changed_coordinate)
+            is_find = self.search_a_puzzle(start + 1)
+            if is_find:
+                # self.table[row][col] = ele
+                break
+            else:
+                # 如果没有找到答案，则把已经更改的状态退回来
+                # 更改已经改过的
+                self.table[row][col] = 0
+                for (tmp_row, tmp_col) in changed_coordinate:
+                    self.coordinate_ele_jud[(tmp_row, tmp_col)][ele] = True
+                for tmp_ele in changed_this_coordinate_ele:
+                    self.coordinate_ele_jud[(row, col)][tmp_ele] = True
+        # 填不了了为什么没有回退上一个呢？
+        # 为什么会出现同行的现象？ 改得不够彻底吗？
+        if is_find:
+            return True
         else:
-            [xgrid,ygrid,num] = [0,0,0]
+            return False
+
+    # 重新开始我们的故事：
+    def clean_data(self):
+        for row in range(0, 9):
+            for col in range(0, 9):
+                self.table[row][col] = 0
+                for tmp_ele in self.ele:
+                    self.coordinate_ele_jud[(row, col)][tmp_ele] = True
+        self.res = 81
+        self.start = 0
+
+    def write_answer_to_file(self, file_path):
+        file = codecs.open()
+        for tmp_table in self.ans:
+            for row in range(0, 9):
+                for col in range(0, 9):
+                    tmp_ele = tmp_table[row][col]
+                    if col == 8:
+                        file.write(tmp_ele, "\n")
+                    else:
+                        file.write(tmp_ele, " ")
+            file.write("\n")
 
 
 
+    def solve_a_puzzle(self, table):
+        self.clean_data()
+        # 构建一个数据结构
+        # 这个数据结构里标着False的，代表这个单元格里面这个元素还没有被填入
+        block_num_ele = []
+        for i in range(0, 9):
+            # 填1~9，全为True,0为False（0不填）
+            block_num_ele.append([False, True, True, True, True, True, True, True, True, True])
 
+        for row in range(0, 9):
+            for col in range(0, 9):
+                ele = table[row][col]
+                # 如果是未填写的数，则继续
+                if ele == 0:
+                    continue
+                # 如果是已经填写的数，先计算这个数所在的block
+                a = int(row / 3)
+                b = int(col / 3)
+                tmp_block_num = a * 3 + b
+                block_num_ele[tmp_block_num][ele] = False
 
+                # 更改自身
+                for tmp_ele in self.ele:
+                    self.coordinate_ele_jud[(row, col)][tmp_ele] = False
+                # 更改本block里面的其他坐标
+                for i in range(0, 3):
+                    tmp_row = a * 3 + i
+                    for j in range(0, 3):
+                        tmp_col = b * 3 + j
+                        self.coordinate_ele_jud[(tmp_row, tmp_col)][ele] = False
+                # 更改同行的
+                for tmp_row in range(0, 9):
+                    self.coordinate_ele_jud[(tmp_row, col)][ele] = False
+                # 更改同列的
+                for tmp_col in range(0, 9):
+                    self.coordinate_ele_jud[(row, tmp_col)][ele] = False
 
-
+        # 初始化状态后，统计每个元素剩余的代填格数是什么
+        ls = []
+        for tmp_block_num in range(0,9):
+            n = 0
+            for tmp_ele in range(1,10):
+                if block_num_ele[tmp_block_num][tmp_ele]:
+                    n += 1
+            ls.append((tmp_block_num, n))
+        ls.sort(key=ele_compare)
+        for (tmp_block_num, left) in ls:
+            for tmp_ele in range(1,10):
+                if block_num_ele[tmp_block_num][tmp_ele]:
+                    self.path.append((tmp_block_num, tmp_ele))
+        self.search_a_puzzle(0)

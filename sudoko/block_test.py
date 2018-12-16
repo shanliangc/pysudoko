@@ -1,3 +1,4 @@
 import sudoko.SudoBlock
-block = sudoko.SudoBlock.SudoBlock(7)
-block.print_block()
+tmp_block = sudoko.SudoBlock.SudoBlock(3)
+tmp_block.print_block()
+tmp_block.
