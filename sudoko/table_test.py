@@ -1,12 +1,25 @@
 import sudoko.SudoTable
 import time
-tmp_table = sudoko.SudoTable.SudoTable(100)
-n = 10
-tmp_table.generate_sudoko_puzzle()
+import codecs
 start = time.time()
-for i in range(0,1000):
-    print(i)
-    tmp_table.generate_sudoko_puzzle()
-    tmp_table.clean_data()
+sudotable = sudoko.SudoTable.SudoTable(1)
+
+
+file_path = "sudokopuzzle.txt"
+table = []
+file = codecs.open(file_path,'r','utf-8')
+num = 0
+print("sssssssss")
+for line in file.readlines():
+    if num == 9:
+        break
+    num += 1
+    row = line.strip().split()
+    ls = []
+    for i in range(0,9):
+        ls.append(int(row[i]))
+    table.append(ls.copy())
+
+sudotable.solve_a_puzzle(table)
 end = time.time()
-print(end-start,"s")
+print(end-start,'s')

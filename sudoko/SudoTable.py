@@ -1,10 +1,9 @@
-import sudoko.SudoBlock
 import random
 import codecs
 
 
 def ele_compare(ele):
-    return ele[1]
+    return ele[0]
 
 class SudoTable:
     # data:
@@ -110,8 +109,19 @@ class SudoTable:
         if start >= len(self.path):
             # print("end")
             # print("end")
-            self.left_puzzle -= 1
-            self.ans.append(self.table)
+            for row in self.table:
+                s = ''
+                for i in range(0,8):
+                    s += str(row[i])
+                    s += ' '
+                s += str(row[8])
+                s += '\n'
+                self.ans.append(s)
+            self.ans.append('\n')
+            for row in self.ans:
+                print(row,end = '')
+
+
             # for row in self.table:
             #     print(row)
             # print()
@@ -208,52 +218,64 @@ class SudoTable:
 
     def solve_a_puzzle(self, table):
         self.clean_data()
+        self.path = []
         # 构建一个数据结构
         # 这个数据结构里标着False的，代表这个单元格里面这个元素还没有被填入
+        print("----------------------------------------------")
+        for row in table:
+            print(row)
+        print("----------------------------------------------")
+
         block_num_ele = []
+        #block_num_ele最后用来统计哪一个已经填过了
+        left_block_num = [9, 9, 9, 9, 9, 9, 9, 9, 9]
         for i in range(0, 9):
             # 填1~9，全为True,0为False（0不填）
             block_num_ele.append([False, True, True, True, True, True, True, True, True, True])
-
+        #读取table中的每一个数
+        left_block_num = []
         for row in range(0, 9):
             for col in range(0, 9):
                 ele = table[row][col]
+                self.table[row][col] = ele
                 # 如果是未填写的数，则继续
-                if ele == 0:
-                    continue
-                # 如果是已经填写的数，先计算这个数所在的block
                 a = int(row / 3)
                 b = int(col / 3)
                 tmp_block_num = a * 3 + b
-                block_num_ele[tmp_block_num][ele] = False
+                if ele == 0:
+                    continue
+                # 如果是已经填写的数，先计算这个数所在的block
 
+
+                # 如果这个block里面已经填过了这个ele就填写False
+                block_num_ele[tmp_block_num][ele] = False
                 # 更改自身
                 for tmp_ele in self.ele:
                     self.coordinate_ele_jud[(row, col)][tmp_ele] = False
+
                 # 更改本block里面的其他坐标
                 for i in range(0, 3):
                     tmp_row = a * 3 + i
                     for j in range(0, 3):
                         tmp_col = b * 3 + j
                         self.coordinate_ele_jud[(tmp_row, tmp_col)][ele] = False
+
                 # 更改同行的
                 for tmp_row in range(0, 9):
                     self.coordinate_ele_jud[(tmp_row, col)][ele] = False
+
                 # 更改同列的
                 for tmp_col in range(0, 9):
                     self.coordinate_ele_jud[(row, tmp_col)][ele] = False
-
-        # 初始化状态后，统计每个元素剩余的代填格数是什么
-        ls = []
-        for tmp_block_num in range(0,9):
-            n = 0
-            for tmp_ele in range(1,10):
+        for tmp_block_num in range(0, 9):
+            for tmp_ele in range(1, 10):
                 if block_num_ele[tmp_block_num][tmp_ele]:
-                    n += 1
-            ls.append((tmp_block_num, n))
-        ls.sort(key=ele_compare)
-        for (tmp_block_num, left) in ls:
-            for tmp_ele in range(1,10):
-                if block_num_ele[tmp_block_num][tmp_ele]:
-                    self.path.append((tmp_block_num, tmp_ele))
+                    self.path.append((tmp_ele,tmp_block_num))
         self.search_a_puzzle(0)
+        # 初始化状态后，统计每个元素剩余的代填格数是什么
+
+    def write_to_file(self,file_path):
+        file = codecs.open(file_path, 'a', 'utf-8')
+        for row in self.ans:
+            file.write()
+        file.close()
